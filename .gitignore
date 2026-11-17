@@ -1,0 +1,14 @@
+.build/
+.swiftpm/
+.DS_Store
+DerivedData/
+*.xcuserstate
+xcuserdata/
+.env
+*.p8
+*.p12
+*.mobileprovision
+*.ipa
+*.xcarchive/
+artifacts/
+verification/local/
