@@ -32,9 +32,10 @@ run(["xcrun", "simctl", "bootstatus", udid, "-b"], timeout=300)
 args = ["xcodebuild", "test", "-project", "ios/LockscreenOTP.xcodeproj", "-scheme", "LockscreenOTP",
         "-destination", f"platform=iOS Simulator,id={udid}", "-derivedDataPath", str(out / "derived"),
         "-resultBundlePath", str(out / "ui-tests.xcresult"), "-parallel-testing-enabled", "NO",
-        "CODE_SIGNING_ALLOWED=NO", "-IDEBuildingContinueBuildingAfterErrors=YES"]
+        "CODE_SIGNING_ALLOWED=YES", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual", "-IDEBuildingContinueBuildingAfterErrors=YES"]
 with (out / "ui-tests.log").open("w") as log:
     test = subprocess.run(args, stdout=log, stderr=subprocess.STDOUT, timeout=1200)
+subprocess.run(["xcrun", "xcresulttool", "export", "attachments", "--path", str(out / "ui-tests.xcresult"), "--output-path", str(out / "attachments")], timeout=120)
 text = (out / "ui-tests.log").read_text()
 for line in text.splitlines():
     if any(word in line for word in ["error:", "Test Case", "TEST SUCCEEDED", "TEST FAILED"]):

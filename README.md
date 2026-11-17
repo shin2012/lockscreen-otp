@@ -27,9 +27,9 @@
 
 `xcodegen generate --spec ios/project.yml`
 
-`xcodebuild build -project ios/LockscreenOTP.xcodeproj -scheme LockscreenOTP -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO`
+`xcodebuild build -project ios/LockscreenOTP.xcodeproj -scheme LockscreenOTP -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual`
 
-리눅스 코어 시험은 Apple Swift Crypto, 애플 플랫폼은 시스템 CryptoKit을 사용합니다. iOS 앱은 외부 패키지·서버·네트워크 없이 동작합니다. 시뮬레이터는 서명된 공유 키체인 권한이 없으므로 기기별 기본 키체인을 사용하며 앱·위젯 공유 검증으로 간주하지 않습니다.
+리눅스 코어 시험은 Apple Swift Crypto, 애플 플랫폼은 시스템 CryptoKit을 사용합니다. iOS 앱은 외부 패키지·서버·네트워크 없이 동작합니다. 시뮬레이터는 무료 임시 서명으로 공유 Keychain 엔타이틀먼트를 넣어 시험합니다. 기기 서명·실제 잠금 상태의 보호 정책은 별도 검증 대상입니다.
 
 ## 🚀 TestFlight
 저장소 Secrets에 `APPLE_TEAM_ID`, `ASC_ISSUER_ID`, `ASC_KEY_ID`, `ASC_KEY_P8`가 필요합니다. 비밀값은 저장소 설정에서만 입력하며 채팅·소스·로그에 남기지 않습니다.

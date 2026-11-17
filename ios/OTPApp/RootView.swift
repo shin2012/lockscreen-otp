@@ -25,7 +25,7 @@ struct RootView: View {
                     if value.selectedID == target.id { value.selectedID = value.accounts.first?.id }
                 }
                 deleteTarget = nil
-            }
+            }.accessibilityIdentifier("confirm-delete")
             Button("취소", role: .cancel) { deleteTarget = nil }
         } message: { Text("키는 복구할 수 없습니다. 시스템 위젯에 이미 전달한 코드는 갱신 전까지 남을 수 있습니다.") }
     }

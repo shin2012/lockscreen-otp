@@ -30,7 +30,7 @@ jobs:
       - name: 앱과 위젯 빌드
         run: |
           set -o pipefail
-          xcodebuild build -project ios/LockscreenOTP.xcodeproj -scheme LockscreenOTP -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO -IDEBuildingContinueBuildingAfterErrors=YES 2>&1 | tee build.log
+          xcodebuild build -project ios/LockscreenOTP.xcodeproj -scheme LockscreenOTP -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/verification/derived" CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual -IDEBuildingContinueBuildingAfterErrors=YES 2>&1 | tee build.log
       - name: 시뮬레이터 UI 시험과 화면
         run: python3 ios/ci/verify_simulator.py
       - uses: actions/upload-artifact@v4
@@ -43,6 +43,7 @@ jobs:
             ${{ runner.temp }}/verification/*.png
             ${{ runner.temp }}/verification/*.log
             ${{ runner.temp }}/verification/*.xcresult
+            ${{ runner.temp }}/verification/attachments
   testflight:
     needs: build
     if: github.event_name == 'workflow_dispatch' && inputs.testflight

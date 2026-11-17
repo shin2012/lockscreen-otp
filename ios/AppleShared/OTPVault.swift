@@ -22,10 +22,8 @@ enum KeychainVault {
         var q: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
                                kSecAttrService as String: service,
                                kSecAttrAccount as String: "vault-v1"]
-        #if !targetEnvironment(simulator)
         if let group = Bundle.main.object(forInfoDictionaryKey: "SharedKeychainGroup") as? String,
            !group.contains("$("), !group.isEmpty { q[kSecAttrAccessGroup as String] = group }
-        #endif
         return q
     }
     static func load() throws -> OTPVault {
