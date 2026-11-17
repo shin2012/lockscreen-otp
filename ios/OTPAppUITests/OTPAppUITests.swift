@@ -2,6 +2,7 @@ import XCTest
 
 final class OTPAppUITests: XCTestCase {
     func testLaunchDemoAndRejectInvalidInput() throws {
+        continueAfterFailure = false
         let app = XCUIApplication()
         app.launch()
         XCTAssertTrue(app.navigationBars["잠금 OTP"].waitForExistence(timeout: 15))
@@ -14,6 +15,7 @@ final class OTPAppUITests: XCTestCase {
         let name = app.textFields["account-label"]
         name.tap()
         name.typeText("검증 계정")
+        XCTAssertEqual(name.value as? String, "검증 계정")
         let secret = app.secureTextFields["account-secret"]
         secret.tap()
         // RFC 6238 public fixture, never a real account secret.

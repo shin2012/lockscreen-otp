@@ -36,6 +36,8 @@ args = ["xcodebuild", "test", "-project", "ios/LockscreenOTP.xcodeproj", "-schem
 with (out / "ui-tests.log").open("w") as log:
     test = subprocess.run(args, stdout=log, stderr=subprocess.STDOUT, timeout=1200)
 subprocess.run(["xcrun", "xcresulttool", "export", "attachments", "--path", str(out / "ui-tests.xcresult"), "--output-path", str(out / "attachments")], timeout=120)
+with (out / "vault-events.log").open("w") as log:
+    subprocess.run(["xcrun", "simctl", "spawn", udid, "log", "show", "--last", "10m", "--style", "compact", "--predicate", 'subsystem == "kr.b-612.lockscreenotp"'], stdout=log, stderr=subprocess.STDOUT, timeout=120)
 text = (out / "ui-tests.log").read_text()
 for line in text.splitlines():
     if any(word in line for word in ["error:", "Test Case", "TEST SUCCEEDED", "TEST FAILED"]):

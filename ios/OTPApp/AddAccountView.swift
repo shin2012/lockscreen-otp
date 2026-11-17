@@ -1,4 +1,5 @@
 import SwiftUI
+import OSLog
 
 struct AddAccountView: View {
     @EnvironmentObject private var store: VaultStore
@@ -45,6 +46,9 @@ struct AddAccountView: View {
     }
     private func clear() { secret = ""; uri = "" }
     private func save() {
+        #if DEBUG && targetEnvironment(simulator)
+        Logger(subsystem: "kr.b-612.lockscreenotp", category: "input").notice("save entered labelPresent=\(!label.isEmpty, privacy: .public) keyPresent=\(!secret.isEmpty, privacy: .public)")
+        #endif
         do {
             let account: OTPAccount
             if !uri.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
