@@ -29,8 +29,10 @@ final class OTPAppUITests: XCTestCase {
         XCTAssertTrue(row.exists)
         row.swipeLeft()
         app.buttons["삭제"].tap()
-        XCTAssertTrue(app.buttons["confirm-delete"].waitForExistence(timeout: 5))
-        app.buttons["confirm-delete"].tap()
+        // iOS 26 exposes the dialog button and its wrapper with the same identifier.
+        let confirm = app.buttons.matching(identifier: "confirm-delete").firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.tap()
         XCTAssertTrue(app.staticTexts["등록된 계정이 없습니다."].waitForExistence(timeout: 5))
         app.tabBars.buttons["위젯"].tap()
         let demo = app.switches["시험키 사용"]
