@@ -5,7 +5,7 @@ import CryptoKit
 import Crypto
 #endif
 
-public enum OTPAlgorithm: String, Sendable { case sha1, sha256, sha512 }
+public enum OTPAlgorithm: String, Codable, Sendable { case sha1, sha256, sha512 }
 public enum OTPError: Error { case invalidDigits, invalidPeriod, emptySecret, invalidTime, invalidCount }
 
 public enum TOTPEngine {

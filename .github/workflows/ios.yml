@@ -3,13 +3,88 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      testflight:
+        description: TestFlight 업로드
+        type: boolean
+        default: false
 permissions:
   contents: read
+concurrency:
+  group: ios-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+      - name: Xcode 선택
+        run: python3 ios/ci/select_xcode.py
       - name: 코어 시험
         run: swift test -j 4
+      - name: 프로젝트 생성
+        run: |
+          command -v xcodegen || brew install xcodegen
+          xcodegen generate --spec ios/project.yml
+      - name: 앱과 위젯 빌드
+        run: |
+          set -o pipefail
+          xcodebuild build -project ios/LockscreenOTP.xcodeproj -scheme LockscreenOTP -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO -IDEBuildingContinueBuildingAfterErrors=YES 2>&1 | tee build.log
+      - name: 시뮬레이터 UI 시험과 화면
+        run: python3 ios/ci/verify_simulator.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: otp-verification
+          path: |
+            build.log
+            ${{ runner.temp }}/verification/*.json
+            ${{ runner.temp }}/verification/*.png
+            ${{ runner.temp }}/verification/*.log
+            ${{ runner.temp }}/verification/*.xcresult
+  testflight:
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.testflight
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode 선택
+        run: python3 ios/ci/select_xcode.py
+      - name: 서명과 앱 등록 확인
+        run: |
+          python3 -m pip install --break-system-packages pyjwt cryptography
+          python3 ios/ci/prepare_signing.py
+      - name: 프로젝트 생성
+        run: |
+          command -v xcodegen || brew install xcodegen
+          xcodegen generate --spec ios/project.yml
+      - name: 아카이브
+        run: |
+          set -o pipefail
+          xcodebuild archive -project ios/LockscreenOTP.xcodeproj -scheme LockscreenOTP -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/OTP.xcarchive" DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION="$BUILD_NUMBER" -allowProvisioningUpdates -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" 2>&1 | tee archive.log
+      - name: 내보내기와 업로드
+        run: |
+          python3 -c 'import os,plistlib; plistlib.dump({"method":"app-store-connect","destination":"export","teamID":os.environ["APPLE_TEAM_ID"],"signingStyle":"automatic","manageAppVersionAndBuildNumber":False},open(os.environ["RUNNER_TEMP"]+"/export.plist","wb"))'
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/OTP.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/export" -allowProvisioningUpdates -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+          xcrun altool --upload-app -t ios -f "$RUNNER_TEMP/export/LockscreenOTP.ipa" --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" --show-progress
+      - name: TestFlight 처리 상태 읽기 검증
+        run: python3 ios/ci/verify_testflight.py
+      - name: 서명키 정리
+        if: always()
+        run: |
+          python3 -c 'import os,pathlib; p=pathlib.Path.home()/"private_keys"/("AuthKey_"+os.environ.get("ASC_KEY_ID","")+".p8"); p.unlink(missing_ok=True)'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: otp-testflight-verification
+          path: |
+            archive.log
+            ${{ runner.temp }}/verification/*.json
