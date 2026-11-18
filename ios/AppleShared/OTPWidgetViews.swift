@@ -1,9 +1,10 @@
 import SwiftUI
 import WidgetKit
 
-/// How the remaining time is drawn around the circular widget.
+/// How the remaining time is shown inside the circular widget.
+/// Every style is drawn by the system from one date range, so none needs extra timeline entries.
 enum OTPRingStyle: String, Codable, Sendable, CaseIterable {
-    case thin, thick, none
+    case bar, ring, seconds, none
 }
 
 struct OTPDisplayEntry {
@@ -14,12 +15,12 @@ struct OTPDisplayEntry {
     let label: String
     let showWhenLocked: Bool
     var showName: Bool = true
-    var ring: OTPRingStyle = .thin
+    var ring: OTPRingStyle = .bar
     var showTime: Bool { ring != .none }
     var hideInAOD: Bool = true
     let message: String?
 
-    /// Whole current period, so the ring is partly drained when an entry starts mid-period.
+    /// Whole current period, so the indicator is partly drained when an entry starts mid-period.
     var window: ClosedRange<Date>? {
         guard code != nil, period > 0 else { return nil }
         let start = validUntil.addingTimeInterval(-Double(period))
@@ -31,49 +32,40 @@ struct CircularOTPView: View {
     @Environment(\.isLuminanceReduced) private var aod
     let entry: OTPDisplayEntry
     private var hidden: Bool { aod && entry.hideInAOD }
+    private var window: ClosedRange<Date>? { hidden ? nil : entry.window }
     var body: some View {
         ZStack {
-            if entry.showTime, !hidden, let window = entry.window {
-                // The system animates this ring on its own, without extra timeline entries.
-                // Its stroke width can't be set, so the thin style keeps only the outer edge.
-                let ring = ProgressView(timerInterval: window, countsDown: true, label: { EmptyView() }, currentValueLabel: { EmptyView() })
+            if entry.ring == .ring, let window {
+                ProgressView(timerInterval: window, countsDown: true, label: { EmptyView() }, currentValueLabel: { EmptyView() })
                     .progressViewStyle(.circular)
-                if entry.ring == .thin {
-                    ZStack {
-                        AccessoryWidgetBackground()
-                        ring.mask { Circle().strokeBorder(lineWidth: 2.5) }
-                    }
-                } else {
-                    ring
-                }
             } else {
                 AccessoryWidgetBackground()
             }
-            content.padding(entry.ring == .thick && !hidden ? 6 : 3)
+            content
+                .padding(.horizontal, entry.ring == .ring ? 8 : 6)
+                .padding(.vertical, 6)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(entry.label) \(hidden ? "가림" : entry.code ?? entry.message ?? "코드 없음")")
     }
 
-    private var fontSize: CGFloat {
-        switch (entry.ring, entry.showName) {
-        case (.thick, true): return 15
-        case (.thick, false): return 17
-        case (_, true): return 17
-        case (_, false): return 20
-        }
+    private var codeSize: CGFloat {
+        let extras = (entry.showName ? 1 : 0) + (entry.showTime && entry.ring != .ring ? 1 : 0)
+        if entry.ring == .ring { return entry.showName ? 14 : 17 }
+        return [19, 17, 15][extras]
     }
 
     @ViewBuilder private var content: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 1) {
             if entry.showName {
                 Text(entry.label)
                     .font(.system(size: 9, weight: .medium))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .padding(.horizontal, 4)
+                    .minimumScaleFactor(0.6)
+                    .frame(maxWidth: 40)
+                    .opacity(0.85)
             }
-            Group {
+            VStack(spacing: -2) {
                 if hidden {
                     Image(systemName: "lock.fill")
                 } else if let code = entry.code {
@@ -84,9 +76,27 @@ struct CircularOTPView: View {
                     Text(entry.message == "기간 만료" ? "만료" : "확인").font(.system(size: 9))
                 }
             }
-            .font(.system(size: fontSize, weight: .semibold, design: .rounded).monospacedDigit())
+            .font(.system(size: codeSize, weight: .semibold, design: .rounded).monospacedDigit())
             .minimumScaleFactor(0.6)
             .privacySensitive(!entry.showWhenLocked)
+            if let window {
+                switch entry.ring {
+                case .bar:
+                    ProgressView(timerInterval: window, countsDown: true, label: { EmptyView() }, currentValueLabel: { EmptyView() })
+                        .progressViewStyle(.linear)
+                        .frame(width: 28)
+                        .scaleEffect(x: 1, y: 0.6)
+                        .padding(.top, 2)
+                case .seconds:
+                    Text(timerInterval: window, countsDown: true, showsHours: false)
+                        .font(.system(size: 9, weight: .medium).monospacedDigit())
+                        .multilineTextAlignment(.center)
+                        .frame(width: 30)
+                        .opacity(0.85)
+                default:
+                    EmptyView()
+                }
+            }
         }
     }
 }

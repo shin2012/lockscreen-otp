@@ -20,7 +20,7 @@ struct OTPProvider: AppIntentTimelineProvider {
     private func sample(_ configuration: OTPWidgetIntent? = nil) -> OTPEntry {
         let now = Date()
         let until = Date(timeIntervalSince1970: (floor(now.timeIntervalSince1970 / 30) + 1) * 30)
-        return OTPEntry(date: now, display: OTPDisplayEntry(date: now, validUntil: until, period: 30, code: "123456", label: "계정", showWhenLocked: true, showName: configuration?.showName ?? true, ring: configuration?.ring ?? .thin, hideInAOD: configuration?.hideInAOD ?? true, message: nil))
+        return OTPEntry(date: now, display: OTPDisplayEntry(date: now, validUntil: until, period: 30, code: "123456", label: "계정", showWhenLocked: true, showName: configuration?.showName ?? true, ring: configuration?.ring ?? .bar, hideInAOD: configuration?.hideInAOD ?? true, message: nil))
     }
     private func unavailable(_ message: String, _ configuration: OTPWidgetIntent) -> OTPEntry {
         let now = Date()

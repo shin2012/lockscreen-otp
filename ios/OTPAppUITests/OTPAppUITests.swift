@@ -59,6 +59,8 @@ final class OTPAppUITests: XCTestCase {
 
         app.tabBars.buttons["위젯"].tap()
         XCTAssertTrue(app.navigationBars["잠금 화면 위젯"].waitForExistence(timeout: 5))
+        app.swipeUp()
+        sleep(1)
         let settings = XCTAttachment(screenshot: app.screenshot())
         settings.name = "widget-settings"
         settings.lifetime = .keepAlways

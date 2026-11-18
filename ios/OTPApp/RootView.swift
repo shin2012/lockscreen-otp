@@ -97,9 +97,14 @@ struct RootView: View {
                 }
                 Button("위젯 새로고침") { store.requestReload() }
             } footer: { Text("30초 주기 기준입니다. 위젯은 이 범위의 번호를 미리 받아 두고 시간에 맞춰 바꿉니다.") }
+            Section {
+                WidgetStylePreview()
+            } header: { Text("원형 위젯 모양") } footer: {
+                Text("예시 번호입니다. 실제 잠금 화면에서는 배경에 맞춰 색이 바뀝니다. 위젯 설정의 \"남은 시간 표시\"에서 고릅니다.")
+            }
             Section("위젯 추가와 설정") {
                 Text("잠금 화면 길게 누르기 → 사용자화 → 위젯 영역 → 잠금 OTP")
-                Text("추가한 위젯을 누르면 계정, 이름 표시, 남은 시간 링 두께, 상시 표시 화면 동작을 위젯마다 고를 수 있습니다.")
+                Text("추가한 위젯을 누르면 계정, 이름 표시, 남은 시간 표시 방식, 상시 표시 화면 동작을 위젯마다 고를 수 있습니다.")
                 Text("상시 표시 화면(AOD)에서는 iOS가 위젯을 거의 다시 그리지 않아 번호가 멈춥니다. 기본값은 AOD에서 번호를 가리는 것입니다.")
                     .foregroundStyle(.secondary)
             }
@@ -169,5 +174,30 @@ struct CountdownRing: View {
         }
         .frame(width: 28, height: 28)
         .accessibilityLabel("\(Int(remaining.rounded(.up)))초 남음")
+    }
+}
+
+struct WidgetStylePreview: View {
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+            let until = Date(timeIntervalSince1970: (floor(context.date.timeIntervalSince1970 / 30) + 1) * 30)
+            HStack(spacing: 10) {
+                ForEach([OTPRingStyle.bar, .ring, .seconds, .none], id: \.self) { style in
+                    VStack(spacing: 4) {
+                        CircularOTPView(entry: OTPDisplayEntry(date: context.date, validUntil: until, period: 30, code: "123456", label: "인트라넷", showWhenLocked: true, ring: style, message: nil))
+                            .frame(width: 68, height: 68)
+                            .foregroundStyle(.white)
+                            .background(Circle().fill(Color(white: 0.35)))
+                        Text(Self.name(style)).font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+        }
+        .accessibilityIdentifier("widget-preview")
+    }
+    static func name(_ style: OTPRingStyle) -> String {
+        switch style { case .bar: "막대"; case .ring: "링"; case .seconds: "초"; case .none: "없음" }
     }
 }
