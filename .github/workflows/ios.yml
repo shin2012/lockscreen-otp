@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
-    runs-on: macos-26
+    runs-on: macos-15
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
@@ -104,7 +104,6 @@ jobs:
             archive.log
             ${{ runner.temp }}/verification/*.json
   testflight_mac:
-    needs: build
     if: github.event_name == 'workflow_dispatch' && inputs.testflight
     runs-on: macos-26
     timeout-minutes: 45
