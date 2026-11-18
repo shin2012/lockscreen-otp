@@ -46,6 +46,7 @@ targets:
       base:
         PRODUCT_NAME: 잠금 OTP
         PRODUCT_MODULE_NAME: LockscreenOTPMac
+        EXECUTABLE_NAME: LockscreenOTP
         PRODUCT_BUNDLE_IDENTIFIER: kr.b-612.lockscreenotp
         INFOPLIST_FILE: Config/Mac-Info.plist
         CODE_SIGN_ENTITLEMENTS: Config/Mac.entitlements
