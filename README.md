@@ -41,4 +41,6 @@
 서명 준비가 번들 ID를 등록한 후 App Store Connect에서 해당 번들 ID의 앱 레코드를 만들어야 합니다. 워크플로 수동 실행에서 TestFlight 업로드를 켭니다.
 
 ## 🔐 보안·제약
+버전 기록과 규칙은 [CHANGELOG](CHANGELOG.md)를 보세요. 앱의 위젯 탭 맨 아래에서 설치된 버전·빌드를 확인할 수 있습니다.
+
 자세한 내용은 [개인정보 안내](docs/PRIVACY.md), [실기기 시험표](docs/verification/lockscreen-matrix.md)를 확인하세요. 내보내기·백업·복구·QR 카메라 스캔은 이번 버전에 포함하지 않습니다. 아이콘은 임시 자체 제작 이미지입니다.

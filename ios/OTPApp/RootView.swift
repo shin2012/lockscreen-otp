@@ -103,6 +103,9 @@ struct RootView: View {
                 Text("상시 표시 화면(AOD)에서는 iOS가 위젯을 거의 다시 그리지 않아 번호가 멈춥니다. 기본값은 AOD에서 번호를 가리는 것입니다.")
                     .foregroundStyle(.secondary)
             }
+            Section {
+                LabeledContent("버전", value: "\(Self.info("CFBundleShortVersionString")) (\(Self.info("CFBundleVersion")))")
+            }
         }
         .disabled(!store.ready)
         .navigationTitle("잠금 화면 위젯")
@@ -115,6 +118,10 @@ struct RootView: View {
             Button("취소", role: .cancel) { }
         } message: { Text("아이폰을 가진 사람이 인증번호를 볼 수 있습니다.") }
     }
+}
+
+extension RootView {
+    static func info(_ key: String) -> String { Bundle.main.object(forInfoDictionaryKey: key) as? String ?? "-" }
 }
 
 struct AccountCodeRow: View {
