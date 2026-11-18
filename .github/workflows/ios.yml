@@ -31,6 +31,10 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild build -project ios/LockscreenOTP.xcodeproj -scheme LockscreenOTP -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/verification/derived" CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual -IDEBuildingContinueBuildingAfterErrors=YES 2>&1 | tee build.log
+      - name: Mac 앱과 위젯 빌드
+        run: |
+          set -o pipefail
+          xcodebuild build -project ios/LockscreenOTP.xcodeproj -scheme LockscreenOTPMac -destination 'generic/platform=macOS' -derivedDataPath "$RUNNER_TEMP/verification/derived-mac" CODE_SIGNING_ALLOWED=NO -IDEBuildingContinueBuildingAfterErrors=YES 2>&1 | tee build-mac.log
       - name: 시뮬레이터 UI 시험과 화면
         run: python3 ios/ci/verify_simulator.py
       - uses: actions/upload-artifact@v4
@@ -39,6 +43,7 @@ jobs:
           name: otp-verification
           path: |
             build.log
+            build-mac.log
             ${{ runner.temp }}/verification/*.json
             ${{ runner.temp }}/verification/*.png
             ${{ runner.temp }}/verification/*.log
@@ -97,4 +102,56 @@ jobs:
           name: otp-testflight-verification
           path: |
             archive.log
+            ${{ runner.temp }}/verification/*.json
+  testflight_mac:
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.testflight
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      BUILD_NUMBER: ${{ github.run_number }}
+      PLATFORM: MAC_OS
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode 선택
+        run: python3 ios/ci/select_xcode.py
+      - name: 버전 확인
+        id: version
+        run: python3 ios/ci/check_version.py
+      - name: 서명 준비와 macOS 플랫폼 확인
+        run: |
+          python3 -m pip install --break-system-packages pyjwt cryptography
+          python3 ios/ci/prepare_signing.py
+          python3 ios/ci/asc_prepare_mac.py kr.b-612.lockscreenotp "${{ steps.version.outputs.version }}" kr.b-612.lockscreenotp.widget
+      - name: 프로젝트 생성
+        run: |
+          command -v xcodegen || brew install xcodegen
+          xcodegen generate --spec ios/project.yml
+      - name: Mac 아카이브
+        run: |
+          set -o pipefail
+          xcodebuild archive -project ios/LockscreenOTP.xcodeproj -scheme LockscreenOTPMac -configuration Release -destination 'generic/platform=macOS' -archivePath "$RUNNER_TEMP/OTPMac.xcarchive" DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION="$BUILD_NUMBER" -allowProvisioningUpdates -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" 2>&1 | tee archive-mac.log
+      - name: Mac 내보내기와 업로드
+        run: |
+          python3 -c 'import os,plistlib; plistlib.dump({"method":"app-store-connect","destination":"export","teamID":os.environ["APPLE_TEAM_ID"],"signingStyle":"automatic","manageAppVersionAndBuildNumber":False},open(os.environ["RUNNER_TEMP"]+"/export.plist","wb"))'
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/OTPMac.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/export" -allowProvisioningUpdates -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+          ls -la "$RUNNER_TEMP/export"
+          pkg=$(ls "$RUNNER_TEMP"/export/*.pkg | head -1)
+          xcrun altool --upload-app -t macos -f "$pkg" --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" --show-progress
+      - name: TestFlight 처리 상태 읽기 검증
+        run: python3 ios/ci/verify_testflight.py
+      - name: 서명키 정리
+        if: always()
+        run: |
+          python3 -c 'import os,pathlib; p=pathlib.Path.home()/"private_keys"/("AuthKey_"+os.environ.get("ASC_KEY_ID","")+".p8"); p.unlink(missing_ok=True)'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: otp-mac-testflight-verification
+          path: |
+            archive-mac.log
             ${{ runner.temp }}/verification/*.json

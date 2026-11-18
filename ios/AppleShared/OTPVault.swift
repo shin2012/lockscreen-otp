@@ -26,6 +26,10 @@ enum KeychainVault {
                                kSecAttrAccount as String: "vault-v1"]
         if let group = Bundle.main.object(forInfoDictionaryKey: "SharedKeychainGroup") as? String,
            !group.contains("$("), !group.isEmpty { q[kSecAttrAccessGroup as String] = group }
+        #if os(macOS)
+        // Access groups and accessibility classes need the iOS-style keychain on macOS.
+        q[kSecUseDataProtectionKeychain as String] = true
+        #endif
         return q
     }
     static func load() throws -> OTPVault {

@@ -54,10 +54,18 @@ struct OTPWidgetView: View {
     let entry: OTPEntry
     var body: some View {
         Group {
+            #if os(iOS)
             if family == .accessoryInline { InlineOTPView(entry: entry.display) }
             else { CircularOTPView(entry: entry.display) }
+            #else
+            MacOTPWidgetView(entry: entry.display)
+            #endif
         }
+        #if os(iOS)
         .containerBackground(.clear, for: .widget)
+        #else
+        .containerBackground(.fill.tertiary, for: .widget)
+        #endif
         .widgetURL(URL(string: "lockscreenotp://open"))
     }
 }
@@ -67,7 +75,12 @@ struct OTPWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "LockscreenOTP", intent: OTPWidgetIntent.self, provider: OTPProvider()) { entry in OTPWidgetView(entry: entry) }
             .configurationDisplayName("잠금 OTP")
+            #if os(iOS)
             .description("위젯을 눌러 계정, 이름·남은 시간 표시, 상시 표시 화면 동작을 고를 수 있습니다.")
             .supportedFamilies([.accessoryCircular, .accessoryInline])
+            #else
+            .description("위젯 편집에서 계정과 남은 시간 표시 방식을 고를 수 있습니다.")
+            .supportedFamilies([.systemSmall, .systemMedium])
+            #endif
     }
 }

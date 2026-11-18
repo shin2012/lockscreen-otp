@@ -28,6 +28,7 @@ struct OTPDisplayEntry {
     }
 }
 
+#if os(iOS)
 struct CircularOTPView: View {
     @Environment(\.isLuminanceReduced) private var aod
     let entry: OTPDisplayEntry
@@ -121,3 +122,4 @@ struct InlineOTPView: View {
         }
     }
 }
+#endif

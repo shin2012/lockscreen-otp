@@ -17,12 +17,13 @@ build_number = os.environ["BUILD_NUMBER"]
 out = pathlib.Path(os.environ["RUNNER_TEMP"]) / "verification"
 out.mkdir(exist_ok=True)
 for attempt in range(40):
-    result = read("/builds?" + urllib.parse.urlencode({"filter[app]": app["id"], "filter[version]": build_number, "include": "preReleaseVersion,buildBetaDetail"}))
-    (out / "testflight.json").write_text(json.dumps(result, indent=2))
+    platform = os.environ.get("PLATFORM", "IOS")
+    result = read("/builds?" + urllib.parse.urlencode({"filter[app]": app["id"], "filter[version]": build_number, "filter[preReleaseVersion.platform]": platform, "include": "preReleaseVersion,buildBetaDetail"}))
+    (out / f"testflight-{platform}.json").write_text(json.dumps(result, indent=2))
     if result["data"]:
         build = result["data"][0]
         state = build["attributes"]["processingState"]
-        print("빌드", build_number, state)
+        print(platform, "빌드", build_number, state)
         if state == "VALID":
             print("처리 완료, 빌드 ID:", build["id"])
             break
