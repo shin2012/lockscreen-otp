@@ -20,11 +20,11 @@ struct OTPProvider: AppIntentTimelineProvider {
     private func sample(_ configuration: OTPWidgetIntent? = nil) -> OTPEntry {
         let now = Date()
         let until = Date(timeIntervalSince1970: (floor(now.timeIntervalSince1970 / 30) + 1) * 30)
-        return OTPEntry(date: now, display: OTPDisplayEntry(date: now, validUntil: until, period: 30, code: "123456", label: "계정", showWhenLocked: true, showName: configuration?.showName ?? true, showTime: configuration?.showTime ?? true, hideInAOD: configuration?.hideInAOD ?? true, message: nil))
+        return OTPEntry(date: now, display: OTPDisplayEntry(date: now, validUntil: until, period: 30, code: "123456", label: "계정", showWhenLocked: true, showName: configuration?.showName ?? true, ring: configuration?.ring ?? .thin, hideInAOD: configuration?.hideInAOD ?? true, message: nil))
     }
     private func unavailable(_ message: String, _ configuration: OTPWidgetIntent) -> OTPEntry {
         let now = Date()
-        return OTPEntry(date: now, display: OTPDisplayEntry(date: now, validUntil: now, period: 30, code: nil, label: "OTP", showWhenLocked: false, showName: configuration.showName, showTime: false, hideInAOD: configuration.hideInAOD, message: message))
+        return OTPEntry(date: now, display: OTPDisplayEntry(date: now, validUntil: now, period: 30, code: nil, label: "OTP", showWhenLocked: false, showName: configuration.showName, ring: .none, hideInAOD: configuration.hideInAOD, message: message))
     }
     private func makeTimeline(_ configuration: OTPWidgetIntent) -> Timeline<OTPEntry> {
         let now = Date()
@@ -39,7 +39,7 @@ struct OTPProvider: AppIntentTimelineProvider {
             }
             let values = try TimelineSchedule.entries(secret: account.secret, now: now, count: vault.entryCount, period: account.period, digits: account.digits, algorithm: account.algorithm)
             let entries = values.map { value in
-                OTPEntry(date: value.date, display: OTPDisplayEntry(date: value.date, validUntil: value.validUntil, period: account.period, code: value.code, label: account.label, showWhenLocked: vault.showWhenLocked, showName: configuration.showName, showTime: configuration.showTime, hideInAOD: configuration.hideInAOD, message: value.code == nil ? "기간 만료" : nil))
+                OTPEntry(date: value.date, display: OTPDisplayEntry(date: value.date, validUntil: value.validUntil, period: account.period, code: value.code, label: account.label, showWhenLocked: vault.showWhenLocked, showName: configuration.showName, ring: configuration.ring, hideInAOD: configuration.hideInAOD, message: value.code == nil ? "기간 만료" : nil))
             }
             let end = values.last!.date
             return Timeline(entries: entries, policy: .after(end.addingTimeInterval(-min(300, end.timeIntervalSince(now) / 2))))

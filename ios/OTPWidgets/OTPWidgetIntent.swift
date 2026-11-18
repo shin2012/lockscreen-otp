@@ -33,11 +33,18 @@ struct OTPWidgetIntent: WidgetConfigurationIntent {
     @Parameter(title: "이름 표시", default: true)
     var showName: Bool
 
-    @Parameter(title: "남은 시간 표시", default: true)
-    var showTime: Bool
+    @Parameter(title: "남은 시간 링", default: .thin)
+    var ring: OTPRingStyle
 
     @Parameter(title: "상시 표시 화면에서 번호 가리기", description: "AOD에서는 위젯이 갱신되지 않아 지난 번호가 남습니다.", default: true)
     var hideInAOD: Bool
 
     init() {}
+}
+
+extension OTPRingStyle: AppEnum {
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "남은 시간 링"
+    static var caseDisplayRepresentations: [OTPRingStyle: DisplayRepresentation] = [
+        .thin: "얇게", .thick: "굵게", .none: "표시 안 함"
+    ]
 }

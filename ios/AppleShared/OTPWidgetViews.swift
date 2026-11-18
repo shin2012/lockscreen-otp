@@ -1,6 +1,11 @@
 import SwiftUI
 import WidgetKit
 
+/// How the remaining time is drawn around the circular widget.
+enum OTPRingStyle: String, Codable, Sendable {
+    case thin, thick, none
+}
+
 struct OTPDisplayEntry {
     let date: Date
     let validUntil: Date
@@ -9,7 +14,8 @@ struct OTPDisplayEntry {
     let label: String
     let showWhenLocked: Bool
     var showName: Bool = true
-    var showTime: Bool = true
+    var ring: OTPRingStyle = .thin
+    var showTime: Bool { ring != .none }
     var hideInAOD: Bool = true
     let message: String?
 
@@ -28,22 +34,41 @@ struct CircularOTPView: View {
     var body: some View {
         ZStack {
             if entry.showTime, !hidden, let window = entry.window {
-                ProgressView(timerInterval: window, countsDown: true, label: { EmptyView() }, currentValueLabel: { EmptyView() })
+                // The system animates this ring on its own, without extra timeline entries.
+                // Its stroke width can't be set, so the thin style keeps only the outer edge.
+                let ring = ProgressView(timerInterval: window, countsDown: true, label: { EmptyView() }, currentValueLabel: { EmptyView() })
                     .progressViewStyle(.circular)
+                if entry.ring == .thin {
+                    ZStack {
+                        AccessoryWidgetBackground()
+                        ring.mask { Circle().strokeBorder(lineWidth: 2.5) }
+                    }
+                } else {
+                    ring
+                }
             } else {
                 AccessoryWidgetBackground()
             }
-            content.padding(entry.showTime ? 5 : 2)
+            content.padding(entry.ring == .thick && !hidden ? 6 : 3)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(entry.label) \(hidden ? "가림" : entry.code ?? entry.message ?? "코드 없음")")
+    }
+
+    private var fontSize: CGFloat {
+        switch (entry.ring, entry.showName) {
+        case (.thick, true): return 15
+        case (.thick, false): return 17
+        case (_, true): return 17
+        case (_, false): return 20
+        }
     }
 
     @ViewBuilder private var content: some View {
         VStack(spacing: 0) {
             if entry.showName {
                 Text(entry.label)
-                    .font(.system(size: 8, weight: .medium))
+                    .font(.system(size: 9, weight: .medium))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                     .padding(.horizontal, 4)
@@ -59,7 +84,7 @@ struct CircularOTPView: View {
                     Text(entry.message == "기간 만료" ? "만료" : "확인").font(.system(size: 9))
                 }
             }
-            .font(.system(size: entry.showName || entry.showTime ? 15 : 20, weight: .semibold, design: .rounded).monospacedDigit())
+            .font(.system(size: fontSize, weight: .semibold, design: .rounded).monospacedDigit())
             .minimumScaleFactor(0.6)
             .privacySensitive(!entry.showWhenLocked)
         }
