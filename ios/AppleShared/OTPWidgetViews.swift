@@ -2,7 +2,7 @@ import SwiftUI
 import WidgetKit
 
 /// How the remaining time is drawn around the circular widget.
-enum OTPRingStyle: String, Codable, Sendable {
+enum OTPRingStyle: String, Codable, Sendable, CaseIterable {
     case thin, thick, none
 }
 
