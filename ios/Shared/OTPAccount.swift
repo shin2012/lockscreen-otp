@@ -1,6 +1,6 @@
 import Foundation
 
-public struct OTPAccount: Codable, Identifiable, Sendable {
+public struct OTPAccount: Codable, Identifiable, Equatable, Sendable {
     public var id: UUID
     public var label: String
     public var secret: Data
