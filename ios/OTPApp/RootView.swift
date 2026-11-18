@@ -179,10 +179,11 @@ struct CountdownRing: View {
 
 struct WidgetStylePreview: View {
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 30)) { context in
+        TimelineView(.periodic(from: Date(timeIntervalSince1970: floor(Date().timeIntervalSince1970 / 30) * 30), by: 30)) { context in
             let until = Date(timeIntervalSince1970: (floor(context.date.timeIntervalSince1970 / 30) + 1) * 30)
             HStack(spacing: 10) {
-                ForEach([OTPRingStyle.bar, .ring, .seconds, .none], id: \.self) { style in
+                // The ring style only renders on the lock screen; in-app ProgressView has no ring.
+                ForEach([OTPRingStyle.bar, .seconds, .none], id: \.self) { style in
                     VStack(spacing: 4) {
                         CircularOTPView(entry: OTPDisplayEntry(date: context.date, validUntil: until, period: 30, code: "123456", label: "인트라넷", showWhenLocked: true, ring: style, message: nil))
                             .frame(width: 68, height: 68)
