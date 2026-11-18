@@ -69,7 +69,7 @@ struct AddAccountView: View {
             let account = try OTPAccountInput.build(mode: mode, label: label, secret: secret, uri: uri, digits: digits, period: period, algorithm: OTPAlgorithm(rawValue: algorithm) ?? .sha1)
             guard store.vault.accounts.count < 100 else { message = "계정은 최대 100개까지 저장할 수 있습니다."; return }
             let previous = store.vault.accounts.count
-            store.change { $0.accounts.append(account); $0.selectedID = account.id; $0.demoMode = false }
+            store.change { $0.accounts.append(account); if $0.selectedID == nil { $0.selectedID = account.id } }
             if store.vault.accounts.count > previous { clear(); dismiss() }
             else { message = "키체인 저장에 실패했습니다. 상위 화면의 오류를 확인하세요." }
         } catch OTPAccountInput.InputError.invalidLabel {

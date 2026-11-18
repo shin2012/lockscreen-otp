@@ -17,22 +17,27 @@ struct OTPAccountQuery: EntityQuery {
     func suggestedEntities() async throws -> [OTPAccountEntity] { allEntities() }
 
     private func allEntities() -> [OTPAccountEntity] {
-        let demo = OTPAccountEntity(id: OTPAccount.demo.id.uuidString, name: "시험 (공개 시험키)")
         // Account names are listed only after the app-level widget opt-in, matching key access.
-        guard let vault = try? KeychainVault.load(), vault.widgetsEnabled else { return [demo] }
-        return vault.accounts.map { OTPAccountEntity(id: $0.id.uuidString, name: $0.label) } + [demo]
+        guard let vault = try? KeychainVault.load(), vault.widgetsEnabled else { return [] }
+        return vault.accounts.map { OTPAccountEntity(id: $0.id.uuidString, name: $0.label) }
     }
 }
 
 struct OTPWidgetIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "잠금 OTP 설정"
-    static var description = IntentDescription("표시할 계정과 이름 표시 여부를 고릅니다.")
+    static var description = IntentDescription("표시할 계정과 표시 방식을 고릅니다.")
 
-    @Parameter(title: "계정", description: "비워 두면 앱에서 선택한 계정을 따릅니다.")
+    @Parameter(title: "계정", description: "비워 두면 앱의 기본 계정(별표)을 따릅니다.")
     var account: OTPAccountEntity?
 
     @Parameter(title: "이름 표시", default: true)
     var showName: Bool
+
+    @Parameter(title: "남은 시간 표시", default: true)
+    var showTime: Bool
+
+    @Parameter(title: "상시 표시 화면에서 번호 가리기", description: "AOD에서는 위젯이 갱신되지 않아 지난 번호가 남습니다.", default: true)
+    var hideInAOD: Bool
 
     init() {}
 }

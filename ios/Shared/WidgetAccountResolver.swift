@@ -7,18 +7,15 @@ public enum WidgetAccountResolution: Equatable, Sendable {
 }
 
 /// Picks the account a lock screen widget shows.
-/// The widget's own choice wins; with no choice it follows the app's selection.
-/// Real keys are only used after the app-level widget opt-in; the public test key never needs it.
+/// The widget's own choice wins; otherwise the app's default account, then the first account.
+/// Keys are only used after the app-level widget opt-in.
 public enum WidgetAccountResolver {
-    public static func resolve(accounts: [OTPAccount], selectedID: UUID?, demoMode: Bool, widgetsEnabled: Bool, requestedID: String?) -> WidgetAccountResolution {
+    public static func resolve(accounts: [OTPAccount], selectedID: UUID?, widgetsEnabled: Bool, requestedID: String?) -> WidgetAccountResolution {
         let target: OTPAccount?
         if let requestedID {
-            if requestedID == OTPAccount.demo.id.uuidString { return .account(.demo) }
             target = accounts.first { $0.id.uuidString == requestedID }
-        } else if demoMode {
-            return .account(.demo)
         } else {
-            target = accounts.first { $0.id == selectedID }
+            target = accounts.first { $0.id == selectedID } ?? accounts.first
         }
         guard let target else { return .missing }
         return widgetsEnabled ? .account(target) : .notAllowed

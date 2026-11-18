@@ -7,11 +7,10 @@ private let vaultLog = Logger(subsystem: "kr.b-612.lockscreenotp", category: "va
 struct OTPVault: Codable {
     var accounts: [OTPAccount] = []
     var selectedID: UUID? = nil
-    var demoMode = true
     var widgetsEnabled = false
     var showWhenLocked = false
     var entryCount = 120
-    var selected: OTPAccount? { demoMode ? .demo : accounts.first { $0.id == selectedID } }
+    var selected: OTPAccount? { accounts.first { $0.id == selectedID } ?? accounts.first }
 }
 
 struct VaultFailure: LocalizedError {
